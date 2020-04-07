@@ -88,44 +88,30 @@ class PlayerOverlay: UIView {
         setupLayout()
     }
     
-    @objc func count() {
-        let now = Date()
-        let formatter = DateFormatter()
-        formatter.timeZone = TimeZone.current
+    func switchState(_ currentState: BaseState) {
         
-        guard startDate != nil else {return}
-        guard Calendar.current.dateComponents([.second, .minute, .hour], from: startDate!, to: now) != nil else {return}
-        let time = Calendar.current.dateComponents([.second, .minute, .hour], from: startDate!, to: now)
-        var hour: String
-        var minute: String
-        var second: String
-
-        if (time.hour?.description.count)! > 1 {
-            hour = (time.hour?.description)!
-        } else {
-            hour = "0\((time.hour?.description)!)"
+        switch currentState {
+            
+            case .loading: do {
+                isHidden = true
+            }
+            
+            case .player: do {
+                nextButton.isHidden = false
+            }
+            
+            case .broadcast: do {
+                nextButton.isHidden = true
+            }
+            
         }
-        
-        if (time.minute?.description.count)! > 1 {
-            minute = (time.minute?.description)!
-        } else {
-            minute = "0\((time.minute?.description)!)"
-        }
-        
-        if (time.second?.description.count)! > 1 {
-            second = (time.second?.description)!
-        } else {
-            second = "0\((time.second?.description)!)"
-        }
-        
-        timeLabel.text = "\(hour):\(minute):\(second)"
         
     }
     
     required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
+            fatalError("init(coder:) has not been implemented")
+        }
+        
     fileprivate func setupViews() {
         
         addSubview(timeLabel)
@@ -187,7 +173,8 @@ class PlayerOverlay: UIView {
             profileImageView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -20),
             profileImageView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 10),
             profileImageView.widthAnchor.constraint(equalToConstant: 46),
-            profileImageView.heightAnchor.constraint(equalToConstant: 46),
+            profileImageView.heightAnchor.constraint(equalToConstant: 0),
+
             
             // votes View
             votesView.topAnchor.constraint(equalTo: profileImageView.bottomAnchor, constant: 25),
@@ -226,75 +213,56 @@ class PlayerOverlay: UIView {
         ])
     }
     
-}
+    @objc func count() {
+        let now = Date()
+        let formatter = DateFormatter()
+        formatter.timeZone = TimeZone.current
+        
+        guard startDate != nil else {return}
+        guard Calendar.current.dateComponents([.second, .minute, .hour], from: startDate!, to: now) != nil else {return}
+        let time = Calendar.current.dateComponents([.second, .minute, .hour], from: startDate!, to: now)
+        var hour: String
+        var minute: String
+        var second: String
 
-class NextSliderView: UIView {
-    
-    lazy var gradient: CAGradientLayer = {
-        let gradient = CAGradientLayer()
-        gradient.colors = [UIColor.mainRed.withAlphaComponent(0.3).cgColor, UIColor.mainRed.cgColor]
-        return gradient
-    }()
-    
-    lazy var nextsLevel: UIView = {
-        var nextsLevel = UIView()
-        return nextsLevel
-    }()
-    
-    var sliderHeightConstraint: NSLayoutConstraint!
-    var fullHeight: CGFloat = 0.0
-    var percent = 0.0
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        backgroundColor = UIColor.init(white: 0, alpha: 0.32)
-        setupViews()
-        setupLayout()
+        if (time.hour?.description.count)! > 1 {
+            hour = (time.hour?.description)!
+        } else {
+            hour = "0\((time.hour?.description)!)"
+        }
+        
+        if (time.minute?.description.count)! > 1 {
+            minute = (time.minute?.description)!
+        } else {
+            minute = "0\((time.minute?.description)!)"
+        }
+        
+        if (time.second?.description.count)! > 1 {
+            second = (time.second?.description)!
+        } else {
+            second = "0\((time.second?.description)!)"
+        }
+        
+        timeLabel.text = "\(hour):\(minute):\(second)"
+        
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    func sliderAnimate(_ percent: Double) {
-        self.percent = percent
-        UIView.animate(withDuration: 1, animations: {
-            self.sliderHeightConstraint.constant = -(self.fullHeight*CGFloat(percent))
-        }) { (success) in
-            self.layoutIfNeeded()
+    func update(_ playerData: PlayerData) {
+        votesLabel.text = playerData.votes.description
+        viewersLabel.text = playerData.viewers.description
+        startDate = playerData.start
+        print("PERCENT", Float(playerData.votes), Float(playerData.viewers))
+        print("PERCENT", Float(playerData.votes)/Float(playerData.viewers))
+        if Double(playerData.votes) == 0.0 {
+            votesView.sliderAnimate(0.0)
+
+        } else {
+            var viewers = playerData.viewers
+            if playerData.viewers >= 2 {
+                viewers = playerData.viewers/2
+            }
+            votesView.sliderAnimate(Double(playerData.votes)/Double(viewers))
         }
     }
     
-    fileprivate func setupViews() {
-        
-        addSubview(nextsLevel)
-        nextsLevel.translatesAutoresizingMaskIntoConstraints = false
-        layer.addSublayer(gradient)
-
-    }
-    
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        fullHeight = self.frame.height
-        print("HEIGHT", fullHeight)
-        nextsLevel.layer.masksToBounds = true
-        nextsLevel.layer.cornerRadius = 14
-        gradient.frame = nextsLevel.frame
-        sliderAnimate(percent)
-    }
-    
-    fileprivate func setupLayout() {
-        NSLayoutConstraint.activate([
-
-            // nexts level view
-            nextsLevel.leadingAnchor.constraint(equalTo: leadingAnchor),
-            nextsLevel.trailingAnchor.constraint(equalTo: trailingAnchor),
-            nextsLevel.bottomAnchor.constraint(equalTo: bottomAnchor)
-            
-            
-        ])
-        
-        sliderHeightConstraint = nextsLevel.topAnchor.constraint(equalTo: bottomAnchor, constant: 0)
-        sliderHeightConstraint.isActive = true
-    }
 }

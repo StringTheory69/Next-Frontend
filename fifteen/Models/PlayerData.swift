@@ -8,8 +8,8 @@
 
 import Foundation
 
-struct PlayerData {
+struct PlayerData: Codable {
     var votes: Int
     var viewers: Int
-    var startDate: Date
+    var start: Date
 }
