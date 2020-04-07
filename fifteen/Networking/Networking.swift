@@ -13,7 +13,8 @@ class Networking: NSObject, URLSessionWebSocketDelegate {
     var urlSession: URLSession!
     var webSocketTask: URLSessionWebSocketTask?
     var socketUrl: URL!
-    
+    var delegate: MainVC!
+
     init(_ urlString: String) {
         super.init()
         self.socketUrl = URL(string: urlString)
@@ -49,6 +50,17 @@ class Networking: NSObject, URLSessionWebSocketDelegate {
         }
     }
     
+    @objc func nextVote(_ completion: @escaping () -> ()) {
+        let message = URLSessionWebSocketTask.Message.string("next")
+        webSocketTask!.send(message) { error in
+          if let error = error {
+            print("WebSocket couldn’t send message because: \(error)")
+          } else {
+                completion()
+            }
+        }
+    }
+    
     // receive incoming messages
     func attachListener() {
         webSocketTask!.receive { result in
@@ -67,6 +79,7 @@ class Networking: NSObject, URLSessionWebSocketDelegate {
                 
                 do {
                     let playerData = try decoder.decode(PlayerData.self, from: Data(text.utf8))
+                    self.delegate.playerData = playerData
                     print(playerData)
                 } catch {
                     print(error.localizedDescription)
@@ -92,6 +105,16 @@ class Networking: NSObject, URLSessionWebSocketDelegate {
           self.sendPing()
         }
       }
+    }
+    
+    // send out stream active message when stream begins
+    func sendStreamActive(_ resourceUri: String) {
+        let message = URLSessionWebSocketTask.Message.string(resourceUri)
+        webSocketTask!.send(message) { error in
+          if let error = error {
+            print("WebSocket couldn’t send message because: \(error)")
+          } 
+        }
     }
     
     // close connection

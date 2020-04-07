@@ -14,10 +14,20 @@ class MainVC: UIViewController {
     var baseView = BaseView()
     var playerOverlay = PlayerOverlay()
 
-    var network = NetworkController.init()
-    var data = ContainerData()
+//    var network = NetworkController.init()
+    var websocket = Networking("ws://localhost:3000")
+    var resourceUri = ""
     var playerData: PlayerData! {
         willSet(newValue) {
+            
+            // TODO: find a clever way to deal with this 
+            // bambuser only
+//            if newValue.resourceUri != resourceUri {
+//                // reload playerView
+//                baseView.playerView.resourceUri = newValue.resourceUri
+//                baseView.reloadPlayerView()
+//                self.resourceUri = newValue.resourceUri
+//            }
             
             // if first new data create and start timer
             if timer == nil {
@@ -26,6 +36,8 @@ class MainVC: UIViewController {
             
             playerOverlay.update(newValue)
             
+            guard newValue.chosen == true else {return}
+            setupForBroadcast()
         }
     }
 
@@ -41,8 +53,9 @@ class MainVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        network.delegate = self
-                
+//        network.delegate = self
+        websocket.delegate = self
+        
         view.addSubview(baseView)
         view.addSubview(playerOverlay)
         baseView.frame = view.frame
@@ -50,7 +63,24 @@ class MainVC: UIViewController {
         
         currentState = .loading
         
-        playerOverlay.nextButton.addTarget(network, action: #selector(network.nextAction), for: UIControl.Event.touchUpInside)
+        playerOverlay.nextButton.addTarget(self, action: #selector(nextButton), for: UIControl.Event.touchUpInside)
+        
+    }
+    
+    @objc func nextButton() {
+        websocket.nextVote(hideNextButton)
+    }
+    
+    func hideNextButton() {
+        playerOverlay.nextButton.isHidden = true
+    }
+    
+    func setupForBroadcast() {
+        
+        timer?.invalidate()
+        timer = nil
+        
+        currentState = .broadcast
         
     }
     

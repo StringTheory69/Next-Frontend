@@ -7,41 +7,27 @@
 //
 
 import Foundation
+import AVKit
 
 class LoadingView: UIView {
     
-    lazy var loadingLabel: UILabel = {
-        var loadingLabel = UILabel()
-        loadingLabel.text = "Loading..."
-        loadingLabel.textColor = .white
-        return loadingLabel
-    }()
+    var spinner = UIActivityIndicatorView(style: .whiteLarge)
     
     override init(frame: CGRect) {
         super.init(frame: frame)
                         
-        backgroundColor = .red
-        
-        // storyboard setup
-        setupView()
-        setupLayout()
+        backgroundColor = UIColor.init(white: 0.1, alpha: 1)
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.startAnimating()
+        addSubview(spinner)
+
+        spinner.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        spinner.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
+
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    fileprivate func setupView() {
-        addSubview(loadingLabel)
-        loadingLabel.translatesAutoresizingMaskIntoConstraints = false
-    }
-    
-    fileprivate func setupLayout() {
-        NSLayoutConstraint.activate([
-            
-            loadingLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            loadingLabel.centerXAnchor.constraint(equalTo: centerXAnchor)
-            
-        ])
-    }
+
 }

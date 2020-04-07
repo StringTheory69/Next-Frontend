@@ -90,7 +90,8 @@ class PlayerOverlay: UIView {
         switch currentState {
             
             case .loading: do {
-                isHidden = true
+                nextButton.isHidden = true
+                resetValues()
             }
             
             case .player: do {
@@ -99,6 +100,7 @@ class PlayerOverlay: UIView {
             
             case .broadcast: do {
                 nextButton.isHidden = true
+                resetValues()
             }
             
         }
@@ -208,6 +210,11 @@ class PlayerOverlay: UIView {
     }
     
     
+    func resetValues() {
+        timeLabel.text = "00:00:00"
+        votesLabel.text = "0"
+        viewersLabel.text = "0"
+    }
     
     func update(_ playerData: PlayerData) {
         
