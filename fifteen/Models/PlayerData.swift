@@ -9,7 +9,7 @@
 import Foundation
 
 struct PlayerData: Codable {
-    var votes: Int
-    var viewers: Int
-    var start: Date
+    var votes: Int!
+    var viewers: Int!
+    var start: Date!
 }

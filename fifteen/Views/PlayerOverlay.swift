@@ -35,7 +35,7 @@ class PlayerOverlay: UIView {
         votesLabel.font = .small
         votesLabel.textAlignment = .center
         votesLabel.textColor = .white
-//        votesLabel.text = "0"
+        votesLabel.text = "0"
         return votesLabel
     }()
     
@@ -51,7 +51,7 @@ class PlayerOverlay: UIView {
         viewersLabel.font = .small
         viewersLabel.textAlignment = .center
         viewersLabel.textColor = .white
-//        viewersLabel.text = "0"
+        viewersLabel.text = "0"
         return viewersLabel
     }()
     
@@ -78,10 +78,7 @@ class PlayerOverlay: UIView {
 //        nextButton.isHidden = true
         return nextButton
     }()
-    
-    var timer: Timer?
-    var startDate: Date?
-    
+        
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupViews()
@@ -155,9 +152,6 @@ class PlayerOverlay: UIView {
         nextButton.layer.masksToBounds = true
         nextButton.layer.cornerRadius = 25
         
-        if timer == nil {
-            timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(count), userInfo: nil, repeats: true)
-        }
     }
     
     fileprivate func setupLayout() {
@@ -213,56 +207,28 @@ class PlayerOverlay: UIView {
         ])
     }
     
-    @objc func count() {
-        let now = Date()
-        let formatter = DateFormatter()
-        formatter.timeZone = TimeZone.current
-        
-        guard startDate != nil else {return}
-        guard Calendar.current.dateComponents([.second, .minute, .hour], from: startDate!, to: now) != nil else {return}
-        let time = Calendar.current.dateComponents([.second, .minute, .hour], from: startDate!, to: now)
-        var hour: String
-        var minute: String
-        var second: String
-
-        if (time.hour?.description.count)! > 1 {
-            hour = (time.hour?.description)!
-        } else {
-            hour = "0\((time.hour?.description)!)"
-        }
-        
-        if (time.minute?.description.count)! > 1 {
-            minute = (time.minute?.description)!
-        } else {
-            minute = "0\((time.minute?.description)!)"
-        }
-        
-        if (time.second?.description.count)! > 1 {
-            second = (time.second?.description)!
-        } else {
-            second = "0\((time.second?.description)!)"
-        }
-        
-        timeLabel.text = "\(hour):\(minute):\(second)"
-        
-    }
+    
     
     func update(_ playerData: PlayerData) {
+        
         votesLabel.text = playerData.votes.description
         viewersLabel.text = playerData.viewers.description
-        startDate = playerData.start
+        
         print("PERCENT", Float(playerData.votes), Float(playerData.viewers))
-        print("PERCENT", Float(playerData.votes)/Float(playerData.viewers))
         if Double(playerData.votes) == 0.0 {
             votesView.sliderAnimate(0.0)
-
         } else {
-            var viewers = playerData.viewers
+            
+            guard var viewers = playerData.viewers else {return}
+            
             if playerData.viewers >= 2 {
                 viewers = playerData.viewers/2
             }
+            
             votesView.sliderAnimate(Double(playerData.votes)/Double(viewers))
+            
         }
+        
     }
     
 }

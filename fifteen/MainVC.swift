@@ -16,6 +16,20 @@ class MainVC: UIViewController {
 
     var network = NetworkController.init()
     var data = ContainerData()
+    var playerData: PlayerData! {
+        willSet(newValue) {
+            
+            // if first new data create and start timer
+            if timer == nil {
+                timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(count), userInfo: nil, repeats: true)
+            }
+            
+            playerOverlay.update(newValue)
+            
+        }
+    }
+
+    var timer: Timer?
     
     var currentState: BaseState! {
         willSet(newValue) {
@@ -29,80 +43,43 @@ class MainVC: UIViewController {
         
         network.delegate = self
                 
-//        view.backgroundColor = .red
-        
         view.addSubview(baseView)
-        baseView.frame = view.frame
         view.addSubview(playerOverlay)
+        baseView.frame = view.frame
         playerOverlay.frame = view.frame
+        
         currentState = .loading
         
         playerOverlay.nextButton.addTarget(network, action: #selector(network.nextAction), for: UIControl.Event.touchUpInside)
-//        playerOverlay.translatesAutoresizingMaskIntoConstraints = false
-//        setupLayout()
         
-    }
-    
-    fileprivate func setupLayout() {
-        NSLayoutConstraint.activate([
-            playerOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            playerOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            playerOverlay.topAnchor.constraint(equalTo: view.topAnchor),
-            playerOverlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
     }
     
     func openAuth() {
         present(story.instantiateViewController(withIdentifier: "AuthVC") as! AuthVC, animated: true, completion: nil)
     }
     
-}
+    @objc func count() {
 
-class BaseView: UIView {
-    
-    var loadingView: LoadingView!
-    var playerView: PlayerView!
-    var broadcastView: BroadcastView!
-    var currentView: UIView?
-
-    
-    func switchView(_ currentState: BaseState) {
+        let time = Calendar.current.dateComponents([.second, .minute, .hour], from: playerData.start, to: Date())
         
-        if currentView != nil {
-            removeView(currentView!)
+        var hour = String(time.hour ?? 0)
+        var minute = String(time.minute ?? 0)
+        var second = String(time.second ?? 0)
+
+        if hour.count <= 1 {
+            hour = "0\(hour)"
         }
         
-        switch currentState {
-            
-            case .loading: do {
-                loadingView = LoadingView()
-                currentView = loadingView
-                addView(loadingView)
-            }
-            
-            case .player: do {
-                playerView = PlayerView()
-                currentView = playerView
-                addView(playerView)
-            }
-            
-            case .broadcast: do {
-                broadcastView = BroadcastView()
-                currentView = broadcastView
-                addView(broadcastView)
-            }
-            
+        if minute.count <= 1 {
+            minute = "0\(minute)"
         }
+        
+        if second.count <= 1 {
+            second = "0\(second)"
+        }
+        
+        playerOverlay.timeLabel.text = "\(hour):\(minute):\(second)"
         
     }
     
-    func addView(_ newView: UIView) {
-        addSubview(newView)
-        newView.frame = frame
-    }
-    
-    func removeView(_ oldView: UIView) {
-        oldView.removeFromSuperview()
-    }
-
 }
