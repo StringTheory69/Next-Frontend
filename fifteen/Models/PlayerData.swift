@@ -11,7 +11,7 @@ import Foundation
 struct PlayerData: Codable {
     var votes: Int!
     var viewers: Int!
-    var start: Date!
-    var chosen = false
-    var resourceUri: String!
+    var start: Double!
+//    var chosen = false
+//    var resourceUri: String = ""
 }

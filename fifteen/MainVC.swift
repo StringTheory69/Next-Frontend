@@ -13,21 +13,27 @@ class MainVC: UIViewController {
     var story: UIStoryboard!
     var baseView = BaseView()
     var playerOverlay = PlayerOverlay()
+    var websocket = Networking("ws://js.local:8080")
+    
+    // bambuser hack
+    var activeBroadcast = false
+    var timer: Timer?
+    
+    // reset player
+//    var streamData = StreamData() {
+//        willSet(newValue) {
+//            print("NEW STREAM")
+//
+//            guard activeBroadcast == false else {return}
+//            currentState = .player
+////            let twitchVC = story.instantiateViewController(withIdentifier: "TwitchStream")
+////            add(twitchVC)
+////            baseView.playerView.play(newValue.streamUri)
+//        }
+//    }
 
-//    var network = NetworkController.init()
-    var websocket = Networking("ws://localhost:3000")
-    var resourceUri = ""
-    var playerData: PlayerData! {
+    var playerData = PlayerData() {
         willSet(newValue) {
-            
-            // TODO: find a clever way to deal with this 
-            // bambuser only
-//            if newValue.resourceUri != resourceUri {
-//                // reload playerView
-//                baseView.playerView.resourceUri = newValue.resourceUri
-//                baseView.reloadPlayerView()
-//                self.resourceUri = newValue.resourceUri
-//            }
             
             // if first new data create and start timer
             if timer == nil {
@@ -35,13 +41,9 @@ class MainVC: UIViewController {
             }
             
             playerOverlay.update(newValue)
-            
-            guard newValue.chosen == true else {return}
-            setupForBroadcast()
+
         }
     }
-
-    var timer: Timer?
     
     var currentState: BaseState! {
         willSet(newValue) {
@@ -53,15 +55,16 @@ class MainVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-//        network.delegate = self
         websocket.delegate = self
         
-        view.addSubview(baseView)
+//        view.addSubview(baseView)
+        add(baseView)
         view.addSubview(playerOverlay)
-        baseView.frame = view.frame
+//        baseView.view.frame = view.frame
         playerOverlay.frame = view.frame
+        baseView.delegate = self
         
-        currentState = .loading
+        currentState = .player
         
         playerOverlay.nextButton.addTarget(self, action: #selector(nextButton), for: UIControl.Event.touchUpInside)
         
@@ -84,13 +87,38 @@ class MainVC: UIViewController {
         
     }
     
+    func cancelBroadcast() {
+        print("CANCEL")
+        activeBroadcast = false
+        currentState = .player
+//        baseView.playerView.play(streamData.streamUri)
+    }
+    
+    func newBroadcast(_ uri: String) {
+        
+        activeBroadcast = true
+        
+        let jsonString = """
+        {
+            "streamUri": "\(uri)"
+        }
+        """
+        
+        websocket.sendStreamStatus(jsonString)
+        
+        // need this for bambuser so that baseview doesn't switch to player view when its own resource uri is updated
+//        activeResourceUri = uri
+    }
+    
     func openAuth() {
         present(story.instantiateViewController(withIdentifier: "AuthVC") as! AuthVC, animated: true, completion: nil)
     }
     
     @objc func count() {
+        
+        let startDate = Date(timeIntervalSince1970: playerData.start)
 
-        let time = Calendar.current.dateComponents([.second, .minute, .hour], from: playerData.start, to: Date())
+        let time = Calendar.current.dateComponents([.second, .minute, .hour], from: startDate, to: Date())
         
         var hour = String(time.hour ?? 0)
         var minute = String(time.minute ?? 0)

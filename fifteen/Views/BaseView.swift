@@ -7,48 +7,46 @@
 //
 
 import UIKit
+import WebKit
+import TwitchPlayer
 
-class BaseView: UIView {
-    
+class BaseView: UIViewController {
+    var story: UIStoryboard!
     var loadingView: LoadingView!
-    var playerView: PlayerView!
-    var broadcastView: BroadcastView!
-    var currentView: UIView?
+    var playerVC: UIViewController!
+    var broadcastView: BroadcastVC!
+    var currentView: UIViewController?
 
-    // bambuser only
-    func reloadPlayerView() {
-        if currentView != nil {
-            removeView(currentView!)
-        }
-        playerView = PlayerView()
-        currentView = playerView
-        addView(playerView)
-    }
+    
+    var delegate: MainVC!
     
     func switchView(_ currentState: BaseState) {
         
         if currentView != nil {
-            removeView(currentView!)
+            currentView?.remove()
         }
-        
+                
         switch currentState {
             
             case .loading: do {
                 loadingView = LoadingView()
                 currentView = loadingView
-                addView(loadingView)
+                addView(loadingView.view)
             }
             
             case .player: do {
-                playerView = PlayerView()
-                currentView = playerView
-                addView(playerView)
+                playerVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "TwitchStream")
+                currentView = playerVC
+                addView(playerVC.view)
             }
             
             case .broadcast: do {
-                broadcastView = BroadcastView()
+                broadcastView = BroadcastVC()
                 currentView = broadcastView
-                addView(broadcastView)
+                addView(broadcastView.view)
+                
+
+                broadcastView.delegate = delegate
             }
             
         }
@@ -56,8 +54,8 @@ class BaseView: UIView {
     }
     
     func addView(_ newView: UIView) {
-        addSubview(newView)
-        newView.frame = frame
+        view.addSubview(newView)
+        newView.frame = view.frame
     }
     
     func removeView(_ oldView: UIView) {

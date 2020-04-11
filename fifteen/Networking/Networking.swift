@@ -18,9 +18,10 @@ class Networking: NSObject, URLSessionWebSocketDelegate {
     init(_ urlString: String) {
         super.init()
         self.socketUrl = URL(string: urlString)
+        openConnection(URL(string: urlString)!)
     }
     
-    func openConnection() {
+    func openConnection(_ url: URL) {
         
         if urlSession != nil {
             urlSession = nil
@@ -32,22 +33,11 @@ class Networking: NSObject, URLSessionWebSocketDelegate {
         }
         
         urlSession = URLSession(configuration: .default, delegate: self, delegateQueue: .main)
-        webSocketTask = urlSession.webSocketTask(with: socketUrl)
+        webSocketTask = urlSession.webSocketTask(with: url)
         webSocketTask!.resume()
 
         attachListener()
         sendPing()
-    }
-    
-    // send message
-    
-    func sendMessage() {
-        let message = URLSessionWebSocketTask.Message.string("next")
-        webSocketTask!.send(message) { error in
-          if let error = error {
-            print("WebSocket couldn’t send message because: \(error)")
-          }
-        }
     }
     
     @objc func nextVote(_ completion: @escaping () -> ()) {
@@ -77,12 +67,26 @@ class Networking: NSObject, URLSessionWebSocketDelegate {
                 
                 let decoder = JSONDecoder()
                 
-                do {
-                    let playerData = try decoder.decode(PlayerData.self, from: Data(text.utf8))
-                    self.delegate.playerData = playerData
-                    print(playerData)
-                } catch {
-                    print(error.localizedDescription)
+                if text.contains("chosen") {
+                    print(text)
+                    // start broadcast
+                    self.delegate.setupForBroadcast()
+                    
+                } else if text.contains("cancel") {
+                    
+                    self.delegate.cancelBroadcast()
+                    
+// \\\\\\\\\\\\\\\\\
+                } else {
+                    // upload new player data 
+                    do {
+                        let playerData = try decoder.decode(PlayerData.self, from: Data(text.utf8))
+                        print(playerData)
+                        self.delegate.playerData = playerData
+                    } catch {
+                        print(error.localizedDescription)
+                    }
+                    
                 }
                 
             case .data(let data):
@@ -108,8 +112,8 @@ class Networking: NSObject, URLSessionWebSocketDelegate {
     }
     
     // send out stream active message when stream begins
-    func sendStreamActive(_ resourceUri: String) {
-        let message = URLSessionWebSocketTask.Message.string(resourceUri)
+    func sendStreamStatus(_ status: String) {
+        let message = URLSessionWebSocketTask.Message.string(status)
         webSocketTask!.send(message) { error in
           if let error = error {
             print("WebSocket couldn’t send message because: \(error)")
@@ -132,7 +136,9 @@ class Networking: NSObject, URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         // restart connection if not intentional
         print("connection disconnected")
-        openConnection()
+        
+//        closeConnection()
+//        openConnection(socketUrl)
     }
     
 }
